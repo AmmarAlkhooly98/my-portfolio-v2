@@ -6,7 +6,7 @@ const port = process.env.PORT || 5000;
 
 
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static('build'));
+app.use(express.static('public'));
 app.use(bodyParser.json());
 
 
