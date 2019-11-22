@@ -9,7 +9,10 @@
 /coverage
 
 # production
+/public
 /public2
+/src
+/../timp.
 
 # misc
 .DS_Store
