@@ -1,7 +1,17 @@
-var express = require("express");
-var router = express.Router();
+let express = require("express");
+let router = express.Router();
+let axios = require("axios");
 
-async function sendEmail(name, email, subject, message, res) {
+const TIME_INTERVAL = 15 * 60 * 1000; // 15 min.
+const SEND_MAIL_LIMIT = 2; // send mail action limit/userIP
+
+let sendMail = new Map();
+
+setInterval(() => {
+  sendMail.clear();
+}, TIME_INTERVAL);
+
+async function sendEmail({ name, email, subject, message, res }) {
   const data = JSON.stringify({
     Messages: [
       {
@@ -35,11 +45,22 @@ async function sendEmail(name, email, subject, message, res) {
     });
 }
 
-// define your own email api which points to your server.
-router.post("/api/sendemail/", function (req, res) {
+router.post("/sendemail", function (req, res) {
+  // Rate limit req. by user IP (resets every 15 min.)
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const ipValue = sendMail.get(ip) + 1;
+  if (!ipValue) {
+    sendMail.set(ip, 1);
+  } else if (ipValue > SEND_MAIL_LIMIT) {
+    return res.status(403).send("forbidden");
+  } else {
+    sendMail.delete(ip);
+    sendMail.set(ip, ipValue);
+  }
+
+  // Send mail logic
   const { name, email, subject, message } = req.body;
-  //todo: implement your spam protection or checks.
-  sendEmail(name, email, subject, message, res);
+  sendEmail({ name, email, subject, message, res });
 });
 
 module.exports = router;
