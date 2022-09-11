@@ -1,7 +1,8 @@
-let express = require("express");
-let router = express.Router();
+const express = require("express");
+const router = express.Router();
 const nodemailer = require("nodemailer");
 
+// Mailer rate limit config constants
 const TIME_INTERVAL = 15 * 60 * 1000; // 15 min.
 const SEND_MAIL_LIMIT = 2; // send mail action limit/userIP
 
@@ -11,7 +12,7 @@ setInterval(() => {
   UsersIp.clear();
 }, TIME_INTERVAL);
 
-async function sendEmail({ name, email, subject, message, res }) {
+const sendEmail = async ({ mailOptions, res }) => {
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -20,14 +21,6 @@ async function sendEmail({ name, email, subject, message, res }) {
         pass: process.env.SMTP_PASSWORD,
       },
     });
-
-    let mailOptions = {
-      from: email,
-      to: "ammaralkhooly1@gmail.com",
-      subject: `Portfolio Msg from ${name} (${email}) - ${subject}`,
-      text: message,
-    };
-
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
         console.error(err);
@@ -41,7 +34,7 @@ async function sendEmail({ name, email, subject, message, res }) {
     console.error(e);
     res.status(500).send("Server Error! Please try again later.");
   }
-}
+};
 
 router.post("/", function (req, res) {
   try {
@@ -59,7 +52,13 @@ router.post("/", function (req, res) {
 
     // Send mail logic
     const { name, email, subject, message } = req.body;
-    sendEmail({ name, email, subject, message, res });
+    let mailOptions = {
+      from: email,
+      to: "ammaralkhooly1@gmail.com",
+      subject: `Portfolio Msg from ${name} (${email}) - ${subject}`,
+      text: message,
+    };
+    sendEmail({ mailOptions, res });
   } catch (e) {
     console.error(e);
     res.status(500).send("Server Error! Please try again later.");
