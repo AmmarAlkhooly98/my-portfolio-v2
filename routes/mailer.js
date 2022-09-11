@@ -1,66 +1,69 @@
 let express = require("express");
 let router = express.Router();
-let axios = require("axios");
+const nodemailer = require("nodemailer");
 
 const TIME_INTERVAL = 15 * 60 * 1000; // 15 min.
 const SEND_MAIL_LIMIT = 2; // send mail action limit/userIP
 
-let sendMail = new Map();
+let UsersIp = new Map();
 
 setInterval(() => {
-  sendMail.clear();
+  UsersIp.clear();
 }, TIME_INTERVAL);
 
 async function sendEmail({ name, email, subject, message, res }) {
-  const data = JSON.stringify({
-    Messages: [
-      {
-        From: { Email: email, Name: name },
-        To: [{ Email: "ammaralkhooly1@gmail.com", Name: "Ammar" }],
-        Subject: subject,
-        TextPart: message,
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.SMTP_USERNAME,
+        pass: process.env.SMTP_PASSWORD,
       },
-    ],
-  });
-
-  const config = {
-    method: "post",
-    url: "https://api.mailjet.com/v3.1/send",
-    data: data,
-    headers: { "Content-Type": "application/json" },
-    auth: {
-      username: process.env.MAILJET_API_KEY,
-      password: process.env.MAILJET_PRIVATE_KEY,
-    },
-  };
-
-  return axios(config)
-    .then(function (response) {
-      console.log(JSON.stringify(response.data));
-      res.status(200).send("Email Sent Successfully!");
-    })
-    .catch(function (error) {
-      console.log(error);
-      res.status(500).send("Server Error! Please try again later.");
     });
+
+    let mailOptions = {
+      from: email,
+      to: "ammaralkhooly1@gmail.com",
+      subject: `Portfolio Msg from ${name} (${email}) - ${subject}`,
+      text: message,
+    };
+
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) {
+        console.error(err);
+        res.status(502).send("Failed to send email! Please try again later.");
+      } else {
+        console.log("Email set:", info);
+        res.status(250).send("Email Sent Successfully!");
+      }
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Server Error! Please try again later.");
+  }
 }
 
-router.post("/sendemail", function (req, res) {
-  // Rate limit req. by user IP (resets every 15 min.)
-  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-  const ipValue = sendMail.get(ip) + 1;
-  if (!ipValue) {
-    sendMail.set(ip, 1);
-  } else if (ipValue > SEND_MAIL_LIMIT) {
-    return res.status(403).send("forbidden");
-  } else {
-    sendMail.delete(ip);
-    sendMail.set(ip, ipValue);
-  }
+router.post("/", function (req, res) {
+  try {
+    // Rate limit req. by user IP (resets every 15 min.)
+    const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const ipValue = UsersIp.get(ip) + 1;
+    if (!ipValue) {
+      UsersIp.set(ip, 1);
+    } else if (ipValue > SEND_MAIL_LIMIT) {
+      return res.status(429).send("Too Many Requests! Please try again later.");
+    } else {
+      UsersIp.delete(ip);
+      UsersIp.set(ip, ipValue);
+    }
 
-  // Send mail logic
-  const { name, email, subject, message } = req.body;
-  sendEmail({ name, email, subject, message, res });
+    // Send mail logic
+    const { name, email, subject, message } = req.body;
+    sendEmail({ name, email, subject, message, res });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Server Error! Please try again later.");
+  }
 });
 
 module.exports = router;
