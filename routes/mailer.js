@@ -4,7 +4,7 @@ const nodemailer = require("nodemailer");
 
 // Mailer rate limit config constants
 const TIME_INTERVAL = 15 * 60 * 1000; // 15 min.
-const SEND_MAIL_LIMIT = 2; // send mail action limit/userIP
+const SEND_MAIL_LIMIT = 1; // send mail action limit/userIP
 
 let UsersIp = new Map();
 
@@ -24,15 +24,17 @@ const sendEmail = async ({ mailOptions, res }) => {
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
         console.error(err);
-        res.status(502).send("Failed to send email! Please try again later.");
+        return res
+          .status(502)
+          .send("Failed to send email! Please try again later.");
       } else {
         console.log("Email set:", info);
-        res.status(250).send("Email Sent Successfully!");
+        return res.status(250).send("Email Sent Successfully!");
       }
     });
   } catch (e) {
     console.error(e);
-    res.status(500).send("Server Error! Please try again later.");
+    return res.status(500).send("Server Error! Please try again later.");
   }
 };
 
@@ -61,7 +63,7 @@ router.post("/", function (req, res) {
     sendEmail({ mailOptions, res });
   } catch (e) {
     console.error(e);
-    res.status(500).send("Server Error! Please try again later.");
+    return res.status(500).send("Server Error! Please try again later.");
   }
 });
 
