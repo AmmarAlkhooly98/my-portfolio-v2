@@ -40,6 +40,13 @@ const sendEmail = async ({ mailOptions, res }) => {
 
 router.post("/", function (req, res) {
   try {
+    const { name, email, subject, message } = req.body;
+    if (!name || !email || !subject || !message) {
+      return res
+        .status(400)
+        .send("name, email, subject, and message are required in req. body");
+    }
+
     // Rate limit req. by user IP (resets every 15 min.)
     const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const ipValue = UsersIp.get(ip) + 1;
@@ -53,7 +60,6 @@ router.post("/", function (req, res) {
     }
 
     // Send mail logic
-    const { name, email, subject, message } = req.body;
     let mailOptions = {
       from: email,
       to: "ammaralkhooly1@gmail.com",
