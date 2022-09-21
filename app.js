@@ -4,7 +4,6 @@ let path = require("path");
 let cookieParser = require("cookie-parser");
 let logger = require("morgan");
 
-let indexRouter = require("./routes/index");
 let mailerRouter = require("./routes/mailer");
 
 let app = express();
@@ -15,7 +14,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", indexRouter);
+/* GET home page. */
+app.get("/", (req, res) => res.render("index"));
+
+/* Mailer Routes. */
 app.use("/api/v1/mailer", mailerRouter);
 
 module.exports = app;
