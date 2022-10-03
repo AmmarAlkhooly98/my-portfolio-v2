@@ -1,3 +1,3 @@
-# My Portfolio App
+# my-portfolio-v2
 
-### https://ammar-alkhooly.herokuapp.com/
+https://ammaralkhooly.herokuapp.com/
