@@ -13,7 +13,8 @@ setInterval(() => {
 const rateLimit = (req, res, next) => {
   try {
     // Rate limit req. by user IP (resets every 15 min.)
-    const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const ip =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress || req.ip;
     const ipValue = USERS_IP.get(ip) + 1;
     if (!ipValue) {
       USERS_IP.set(ip, 1);
