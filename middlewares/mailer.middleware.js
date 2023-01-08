@@ -14,18 +14,11 @@ const rateLimit = (req, res, next) => {
   try {
     // Rate limit req. by user IP (resets every 15 min.)
     const ip =
-      req.headers["x-forwarded-for"] || req.connection.remoteAddress || req.ip;
+      req.ips[0] ||
+      req.ip ||
+      req.connection.remoteAddress ||
+      req.headers["x-forwarded-for"];
     const ipValue = USERS_IP.get(ip) + 1;
-    console.log("hi", {
-      ipValue,
-      USERS_IP,
-      ip: [
-        req.headers["x-forwarded-for"],
-        req.connection.remoteAddress,
-        req.ip,
-        req.ips,
-      ],
-    });
     if (!ipValue) {
       USERS_IP.set(ip, 1);
       next();
